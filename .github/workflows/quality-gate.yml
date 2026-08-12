@@ -1,0 +1,26 @@
+name: Day 14 Evaluation Quality Gate
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Validate golden dataset
+        run: python validate_golden_dataset.py
+      - name: Run evaluation-core tests
+        run: python -m pytest tests/ -v
+      - name: Verify bonus reranking analysis
+        run: PYTHONPATH=. python scripts/analyze_reranking.py
