@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Demo AI Evaluation & Benchmarking Pipeline của Trần Việt Trường">
+  <title>Day 14 · AI Evaluation Demo</title>
+  <style>
+    :root {
+      --ink: #18212f;
+      --muted: #687386;
+      --paper: #f5f2eb;
+      --panel: rgba(255, 255, 255, .78);
+      --line: rgba(24, 33, 47, .12);
+      --navy: #102a43;
+      --teal: #0b8577;
+      --mint: #b9eadc;
+      --orange: #f18f45;
+      --red: #c84c4c;
+      --shadow: 0 24px 60px rgba(22, 35, 52, .10);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 12% 0%, rgba(185, 234, 220, .75), transparent 28rem),
+        radial-gradient(circle at 92% 16%, rgba(241, 143, 69, .16), transparent 25rem),
+        var(--paper);
+    }
+
+    button, select { font: inherit; }
+    a { color: inherit; }
+    .shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 0;
+      gap: 18px;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 800; }
+    .brand-mark {
+      width: 38px; height: 38px; border-radius: 12px;
+      display: grid; place-items: center; color: white;
+      background: linear-gradient(145deg, var(--navy), var(--teal));
+      box-shadow: 0 9px 18px rgba(16, 42, 67, .18);
+    }
+    .status {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 12px; border: 1px solid rgba(11, 133, 119, .2);
+      border-radius: 999px; color: #075f55; background: rgba(185, 234, 220, .42);
+      font-size: 13px; font-weight: 750;
+    }
+    .status::before {
+      content: ""; width: 8px; height: 8px; border-radius: 50%;
+      background: var(--teal); box-shadow: 0 0 0 5px rgba(11, 133, 119, .12);
+    }
+
+    .hero {
+      position: relative; overflow: hidden;
+      padding: clamp(42px, 7vw, 78px);
+      border-radius: 34px;
+      color: white;
+      background: linear-gradient(128deg, #102a43 0%, #164f5b 58%, #0b8577 100%);
+      box-shadow: var(--shadow);
+    }
+    .hero::after {
+      content: ""; position: absolute; width: 410px; height: 410px;
+      right: -120px; top: -180px; border: 1px solid rgba(255,255,255,.18);
+      border-radius: 50%; box-shadow: 0 0 0 50px rgba(255,255,255,.03), 0 0 0 100px rgba(255,255,255,.025);
+    }
+    .eyebrow {
+      margin: 0 0 18px; color: #bceee6; letter-spacing: .16em;
+      text-transform: uppercase; font-size: 12px; font-weight: 850;
+    }
+    h1 { max-width: 760px; margin: 0; font-size: clamp(38px, 6vw, 72px); line-height: .98; letter-spacing: -.055em; }
+    .hero-copy { max-width: 680px; margin: 22px 0 0; color: rgba(255,255,255,.78); font-size: 17px; line-height: 1.7; }
+    .identity { display: flex; flex-wrap: wrap; gap: 10px 28px; margin-top: 32px; font-size: 14px; }
+    .identity strong { color: white; }
+
+    .nav {
+      position: sticky; top: 12px; z-index: 20;
+      width: fit-content; max-width: 100%; margin: 20px auto 0; padding: 6px;
+      display: flex; gap: 4px; overflow-x: auto;
+      background: rgba(255,255,255,.82); backdrop-filter: blur(18px);
+      border: 1px solid var(--line); border-radius: 16px;
+      box-shadow: 0 12px 30px rgba(22,35,52,.09);
+    }
+    .nav button {
+      border: 0; padding: 10px 15px; white-space: nowrap; cursor: pointer;
+      border-radius: 11px; color: var(--muted); background: transparent; font-weight: 720;
+    }
+    .nav button.active { color: white; background: var(--navy); }
+    main { padding: 42px 0 72px; }
+    .view { display: none; animation: enter .32s ease; }
+    .view.active { display: block; }
+    @keyframes enter { from { opacity: 0; transform: translateY(8px); } }
+
+    .section-head { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin: 0 0 18px; }
+    .section-head h2 { margin: 0; font-size: clamp(25px, 3vw, 36px); letter-spacing: -.035em; }
+    .section-head p { margin: 0; color: var(--muted); }
+    .grid { display: grid; gap: 16px; }
+    .kpis { grid-template-columns: repeat(4, 1fr); }
+    .two { grid-template-columns: 1.08fr .92fr; margin-top: 16px; }
+    .card {
+      background: var(--panel); border: 1px solid var(--line); border-radius: 22px;
+      box-shadow: 0 14px 35px rgba(22,35,52,.055); backdrop-filter: blur(10px);
+    }
+    .kpi { padding: 22px; }
+    .kpi .label { color: var(--muted); font-size: 12px; font-weight: 780; text-transform: uppercase; letter-spacing: .09em; }
+    .kpi .value { margin-top: 9px; font-size: 32px; font-weight: 860; letter-spacing: -.04em; }
+    .kpi .note { margin-top: 6px; color: var(--teal); font-size: 13px; font-weight: 720; }
+    .card-body { padding: 26px; }
+    .card h3 { margin: 0 0 22px; font-size: 20px; letter-spacing: -.02em; }
+
+    .metric { display: grid; grid-template-columns: 145px 1fr 50px; gap: 13px; align-items: center; margin: 15px 0; }
+    .metric-name { font-size: 13px; color: var(--muted); }
+    .track { height: 9px; overflow: hidden; border-radius: 99px; background: #e3e2dc; }
+    .fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--teal), #4fc5ac); transform-origin: left; animation: grow .8s ease both; }
+    @keyframes grow { from { transform: scaleX(0); } }
+    .metric-value { font-variant-numeric: tabular-nums; font-weight: 780; font-size: 13px; text-align: right; }
+
+    .pipeline { display: grid; grid-template-columns: repeat(5, 1fr); gap: 9px; align-items: center; }
+    .node { min-height: 92px; padding: 16px 10px; display: grid; place-items: center; text-align: center; border-radius: 16px; background: #eef5f2; border: 1px solid rgba(11,133,119,.14); font-weight: 760; font-size: 13px; }
+    .node small { display: block; margin-top: 6px; color: var(--muted); font-weight: 580; }
+    .arrow { text-align: center; color: var(--teal); font-weight: 900; }
+    .flow { display: contents; }
+
+    .insight { padding: 18px; border-left: 4px solid var(--orange); border-radius: 12px; background: #fff5eb; color: #74411e; line-height: 1.55; }
+    .legend { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 18px; color: var(--muted); font-size: 12px; }
+    .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
+
+    .toolbar { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+    select {
+      padding: 11px 38px 11px 13px; color: var(--ink); background: white;
+      border: 1px solid var(--line); border-radius: 12px; outline: none;
+    }
+    .case-layout { display: grid; grid-template-columns: 310px 1fr; gap: 16px; align-items: start; }
+    .case-list { max-height: 720px; overflow: auto; padding: 8px; }
+    .case-button {
+      width: 100%; display: grid; grid-template-columns: 42px 1fr 48px; align-items: center; gap: 8px;
+      padding: 13px 11px; border: 0; border-bottom: 1px solid var(--line); background: transparent;
+      text-align: left; cursor: pointer; border-radius: 12px;
+    }
+    .case-button:hover, .case-button.active { background: #edf5f2; }
+    .case-id { font-weight: 850; color: var(--navy); }
+    .case-question { color: var(--muted); font-size: 12px; line-height: 1.35; }
+    .score-pill { padding: 5px 7px; border-radius: 8px; text-align: center; color: white; font-size: 11px; font-weight: 800; background: var(--teal); }
+    .score-pill.fail { background: var(--red); }
+    .detail { padding: 28px; }
+    .detail-top { display: flex; justify-content: space-between; gap: 16px; align-items: start; }
+    .badge { padding: 6px 9px; border-radius: 8px; background: #eaf1f4; color: var(--navy); font-size: 11px; font-weight: 820; text-transform: uppercase; }
+    .badge.fail { color: #8a2828; background: #fde8e8; }
+    .answer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 22px 0; }
+    .answer-box { padding: 17px; border-radius: 15px; background: #f7f7f4; line-height: 1.6; font-size: 13px; }
+    .answer-box strong { display: block; margin-bottom: 8px; color: var(--navy); }
+    .score-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+    .mini-score { padding: 12px; border-radius: 12px; text-align: center; background: #edf5f2; }
+    .mini-score strong { display: block; font-size: 20px; }
+    .mini-score span { color: var(--muted); font-size: 11px; }
+    .trace { margin-top: 20px; }
+    .chunk { padding: 13px 0; border-top: 1px solid var(--line); }
+    .chunk-head { display: flex; justify-content: space-between; gap: 10px; color: var(--teal); font-size: 12px; font-weight: 800; }
+    .chunk p { margin: 7px 0 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
+
+    .failure-grid { grid-template-columns: repeat(3, 1fr); }
+    .failure { padding: 24px; position: relative; overflow: hidden; }
+    .failure::before { content: attr(data-rank); position: absolute; right: 16px; top: 3px; color: rgba(200,76,76,.08); font-size: 84px; font-weight: 900; }
+    .failure h3 { margin-bottom: 8px; }
+    .failure .score { color: var(--red); font-weight: 850; }
+    .failure p { color: var(--muted); line-height: 1.6; font-size: 13px; }
+    .failure .fix { padding: 12px; border-radius: 12px; background: #edf5f2; color: #175b52; font-weight: 680; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 13px 10px; border-bottom: 1px solid var(--line); text-align: right; }
+    th:first-child, td:first-child { text-align: left; }
+    th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+    .delta { color: var(--teal); font-weight: 850; }
+    .empty { padding: 48px; text-align: center; color: var(--muted); }
+    .error { padding: 16px; color: #8a2828; background: #fde8e8; border-radius: 12px; }
+    footer { padding: 24px 0 48px; color: var(--muted); text-align: center; font-size: 12px; }
+
+    @media (max-width: 900px) {
+      .kpis, .failure-grid { grid-template-columns: repeat(2, 1fr); }
+      .two, .case-layout { grid-template-columns: 1fr; }
+      .case-list { max-height: 330px; }
+      .pipeline { grid-template-columns: 1fr; }
+      .flow { display: grid; grid-template-columns: 1fr; }
+      .arrow { transform: rotate(90deg); }
+    }
+    @media (max-width: 600px) {
+      .shell { width: min(100% - 20px, 1180px); }
+      .topbar { padding: 14px 2px; }
+      .status { display: none; }
+      .hero { padding: 36px 24px; border-radius: 24px; }
+      .kpis, .failure-grid, .answer-grid, .score-grid { grid-template-columns: 1fr; }
+      .detail { padding: 20px; }
+      .metric { grid-template-columns: 115px 1fr 42px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">E</span> AI Evaluation Lab</div>
+      <span class="status">GitHub Actions · Passing</span>
+    </header>
+
+    <section class="hero">
+      <p class="eyebrow">Day 14 · Real RAG Benchmark</p>
+      <h1>Đánh giá AI bằng evidence, không bằng cảm giác.</h1>
+      <p class="hero-copy">
+        Dashboard trình bày pipeline đánh giá trợ lý Northstar Student Services:
+        20 golden QA, retrieval trace, 5 metrics, failure analysis và CI quality gate.
+      </p>
+      <div class="identity">
+        <span>Học viên <strong>Trần Việt Trường</strong></span>
+        <span>Mã HV <strong>2A202601467</strong></span>
+        <span>Model <strong>gpt-4o-mini</strong></span>
+      </div>
+    </section>
+
+    <nav class="nav" aria-label="Demo sections">
+      <button class="active" data-view="overview">Tổng quan</button>
+      <button data-view="cases">20 test cases</button>
+      <button data-view="failures">Failure analysis</button>
+      <button data-view="bonus">Bonus reranking</button>
+    </nav>
+
+    <main>
+      <section class="view active" id="overview">
+        <div class="section-head">
+          <div><p class="eyebrow" style="color:var(--teal)">Evaluation status</p><h2>Toàn bộ bài trong một màn hình</h2></div>
+          <p id="generatedAt"></p>
+        </div>
+        <div class="grid kpis">
+          <article class="card kpi"><div class="label">Core tests</div><div class="value">42/42</div><div class="note">100% passed</div></article>
+          <article class="card kpi"><div class="label">Golden dataset</div><div class="value">20 QA</div><div class="note">5E · 7M · 5H · 3A</div></article>
+          <article class="card kpi"><div class="label">Corpus coverage</div><div class="value">10/10</div><div class="note">Validator PASS</div></article>
+          <article class="card kpi"><div class="label">Benchmark pass rate</div><div class="value" id="passRate">—</div><div class="note" id="passCount">Loading…</div></article>
+        </div>
+        <div class="grid two">
+          <article class="card card-body"><h3>5 metrics từ benchmark thật</h3><div id="metricBars"></div></article>
+          <article class="card card-body">
+            <h3>Pipeline end-to-end</h3>
+            <div class="pipeline">
+              <div class="flow"><div class="node">Golden Dataset<small>20 QA + evidence</small></div><div class="arrow">→</div></div>
+              <div class="flow"><div class="node">BM25<small>Top-5 chunks</small></div><div class="arrow">→</div></div>
+              <div class="flow"><div class="node">gpt-4o-mini<small>Actual answers</small></div><div class="arrow">→</div></div>
+              <div class="flow"><div class="node">Evaluator<small>5 metrics</small></div><div class="arrow">→</div></div>
+              <div class="node">Quality Gate<small>CI + regression</small></div>
+            </div>
+            <div class="insight" style="margin-top:22px">
+              Context Precision cao cho thấy ranking tốt. Completeness thấp nhất,
+              nên cơ hội cải tiến chính nằm ở structured generation và scope routing.
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="cases">
+        <div class="section-head">
+          <div><p class="eyebrow" style="color:var(--teal)">Trace explorer</p><h2>Đi từ metric về đúng root cause</h2></div>
+        </div>
+        <div class="toolbar">
+          <select id="difficultyFilter" aria-label="Filter difficulty">
+            <option value="all">Tất cả difficulty</option>
+            <option value="easy">Easy</option><option value="medium">Medium</option>
+            <option value="hard">Hard</option><option value="adversarial">Adversarial</option>
+          </select>
+          <select id="statusFilter" aria-label="Filter status">
+            <option value="all">Tất cả trạng thái</option>
+            <option value="pass">Pass</option><option value="fail">Fail</option>
+          </select>
+        </div>
+        <div class="case-layout">
+          <aside class="card case-list" id="caseList"></aside>
+          <article class="card detail" id="caseDetail"><div class="empty">Chọn một case để xem trace.</div></article>
+        </div>
+      </section>
+
+      <section class="view" id="failures">
+        <div class="section-head">
+          <div><p class="eyebrow" style="color:var(--red)">5 Whys</p><h2>Ba failure thấp nhất và cách sửa</h2></div>
+        </div>
+        <div class="grid failure-grid">
+          <article class="card failure" data-rank="1"><h3>A02 · Prompt injection</h3><div class="score">Overall 0.098</div><p>Retriever lấy đúng safety rule ở rank 1, nhưng model chỉ trả lời “I cannot fulfill that request.” Safe nhưng thiếu lý do, privacy rule và lựa chọn hỗ trợ.</p><div class="fix">Fix: structured refusal template + semantic safety judge.</div></article>
+          <article class="card failure" data-rank="2"><h3>A01 · Out of scope</h3><div class="score">Overall 0.330</div><p>Context Recall chỉ 0.185 và không có tài liệu scope trong trace. BM25 không nối “cryptocurrency” với “investment advice”.</p><div class="fix">Fix: scope classifier + mandatory scope routing.</div></article>
+          <article class="card failure" data-rank="3"><h3>H05 · Graduation</h3><div class="score">Overall 0.594</div><p>Retrieval mạnh nhưng answer bỏ sót programme-required courses và capstone. Vấn đề nằm ở coverage, không phải thiếu evidence.</p><div class="fix">Fix: required-policy-elements checklist trước generation.</div></article>
+        </div>
+        <article class="card card-body" style="margin-top:16px">
+          <h3>Chẩn đoán retrieval hay generation?</h3>
+          <div class="insight">
+            Recall thấp → sửa retriever/query/chunking. Recall cao nhưng Completeness
+            thấp → sửa prompt/generation. A01 là retrieval failure; A02 và H05 là
+            generation failures. Đây là lý do retrieval metrics được tách khỏi Overall Score.
+          </div>
+        </article>
+      </section>
+
+      <section class="view" id="bonus">
+        <div class="section-head">
+          <div><p class="eyebrow" style="color:var(--teal)">Bonus +5</p><h2>Reranking: đổi thứ tự, không đổi evidence</h2></div>
+        </div>
+        <article class="card card-body">
+          <table>
+            <thead><tr><th>ID</th><th>Recall trước</th><th>Recall sau</th><th>Precision trước</th><th>Precision sau</th><th>Δ Precision</th></tr></thead>
+            <tbody>
+              <tr><td>E05</td><td>1.000</td><td>1.000</td><td>0.867</td><td>1.000</td><td class="delta">+0.133</td></tr>
+              <tr><td>M06</td><td>0.567</td><td>0.567</td><td>0.950</td><td>1.000</td><td class="delta">+0.050</td></tr>
+              <tr><td>A01</td><td>0.185</td><td>0.185</td><td>0.583</td><td>1.000</td><td class="delta">+0.417</td></tr>
+              <tr><td>A02</td><td>0.913</td><td>0.913</td><td>0.756</td><td>1.000</td><td class="delta">+0.244</td></tr>
+              <tr><td>H03</td><td>0.968</td><td>0.968</td><td>0.950</td><td>1.000</td><td class="delta">+0.050</td></tr>
+              <tr><td><strong>Trung bình</strong></td><td><strong>0.727</strong></td><td><strong>0.727</strong></td><td><strong>0.821</strong></td><td><strong>1.000</strong></td><td class="delta">+0.179</td></tr>
+            </tbody>
+          </table>
+          <div class="insight" style="margin-top:22px">
+            Precision tăng vì relevant chunks được đưa lên đầu. Recall giữ nguyên vì
+            tập chunks không đổi. A01 vẫn cần sửa retriever vì evidence scope chưa được lấy.
+          </div>
+        </article>
+      </section>
+    </main>
+    <footer>Trần Việt Trường · 2A202601467 · Day 14 AI Evaluation & Benchmarking</footer>
+  </div>
+
+  <script>
+    const repoRaw = "https://raw.githubusercontent.com/Truongtv0107/Day14_2A202601467_TranVietTruong/main/";
+    const localBase = location.hostname === "localhost" || location.hostname === "127.0.0.1" ? "../" : repoRaw;
+    const state = { golden: null, actual: null, benchmark: null, selected: "A02" };
+    const metricDefs = [
+      ["Context Recall", "avg_context_recall"],
+      ["Context Precision", "avg_context_precision"],
+      ["Faithfulness", "avg_faithfulness"],
+      ["Relevance", "avg_relevance"],
+      ["Completeness", "avg_completeness"]
+    ];
+    const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+    const byId = (items, id) => items.find(item => item.id === id);
+
+    document.querySelectorAll(".nav button").forEach(button => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".nav button").forEach(item => item.classList.toggle("active", item === button));
+        document.querySelectorAll(".view").forEach(view => view.classList.toggle("active", view.id === button.dataset.view));
+      });
+    });
+
+    async function loadData() {
+      try {
+        const [golden, actual, benchmark] = await Promise.all([
+          fetch(localBase + "golden_dataset.json").then(check),
+          fetch(localBase + "artifacts/actual_answers.json").then(check),
+          fetch(localBase + "artifacts/benchmark_results.json").then(check)
+        ]);
+        Object.assign(state, { golden, actual, benchmark });
+        renderOverview();
+        renderCases();
+      } catch (error) {
+        document.getElementById("metricBars").innerHTML = '<div class="error">Không tải được artifact: ' + esc(error.message) + "</div>";
+        document.getElementById("caseList").innerHTML = '<div class="error">Không tải được dữ liệu demo.</div>';
+      }
+    }
+    async function check(response) {
+      if (!response.ok) throw new Error(response.status + " " + response.statusText);
+      return response.json();
+    }
+    function renderOverview() {
+      const summary = state.benchmark.summary;
+      document.getElementById("passRate").textContent = (summary.pass_rate * 100).toFixed(0) + "%";
+      document.getElementById("passCount").textContent = summary.passed + "/" + summary.total + " cases passed";
+      document.getElementById("generatedAt").textContent = "Artifact: " + new Date(state.actual.generated_at).toLocaleString("vi-VN");
+      document.getElementById("metricBars").innerHTML = metricDefs.map(([label, key]) => {
+        const value = summary[key];
+        return '<div class="metric"><span class="metric-name">' + label + '</span><div class="track"><div class="fill" style="width:' + (value * 100).toFixed(1) + '%"></div></div><span class="metric-value">' + value.toFixed(3) + "</span></div>";
+      }).join("") + '<div class="legend"><span><i class="dot" style="background:var(--teal)"></i>Good ≥ 0.8</span><span><i class="dot" style="background:var(--orange)"></i>Needs work 0.6–0.8</span><span><i class="dot" style="background:var(--red)"></i>Significant &lt; 0.6</span></div>';
+    }
+    function renderCases() {
+      const difficulty = document.getElementById("difficultyFilter").value;
+      const status = document.getElementById("statusFilter").value;
+      const pairs = state.golden.qa_pairs.filter(pair => {
+        const result = byId(state.benchmark.results, pair.id);
+        return (difficulty === "all" || pair.difficulty === difficulty) &&
+          (status === "all" || (status === "pass") === result.passed);
+      });
+      document.getElementById("caseList").innerHTML = pairs.map(pair => {
+        const result = byId(state.benchmark.results, pair.id);
+        return '<button class="case-button ' + (pair.id === state.selected ? "active" : "") + '" data-id="' + pair.id + '"><span class="case-id">' + pair.id + '</span><span class="case-question">' + esc(pair.question) + '</span><span class="score-pill ' + (result.passed ? "" : "fail") + '">' + result.overall.toFixed(2) + "</span></button>";
+      }).join("") || '<div class="empty">Không có case phù hợp.</div>';
+      document.querySelectorAll(".case-button").forEach(button => button.addEventListener("click", () => {
+        state.selected = button.dataset.id; renderCases(); renderDetail(state.selected);
+      }));
+      if (pairs.length && !pairs.some(pair => pair.id === state.selected)) state.selected = pairs[0].id;
+      if (pairs.length) renderDetail(state.selected);
+    }
+    function renderDetail(id) {
+      const pair = byId(state.golden.qa_pairs, id);
+      const answer = byId(state.actual.answers, id);
+      const result = byId(state.benchmark.results, id);
+      const scores = [
+        ["Ctx Recall", result.context_recall], ["Ctx Precision", result.context_precision],
+        ["Faithfulness", result.faithfulness], ["Relevance", result.relevance],
+        ["Completeness", result.completeness], ["Overall", result.overall]
+      ];
+      document.getElementById("caseDetail").innerHTML =
+        '<div class="detail-top"><div><span class="badge">' + esc(pair.difficulty) + '</span><h3 style="margin:12px 0 0">' + id + " · " + esc(pair.question) + '</h3></div><span class="badge ' + (result.passed ? "" : "fail") + '">' + (result.passed ? "PASS" : "FAIL · " + result.failure_type) + '</span></div>' +
+        '<div class="answer-grid"><div class="answer-box"><strong>Expected answer</strong>' + esc(pair.expected_answer) + '</div><div class="answer-box"><strong>Actual answer</strong>' + esc(answer.actual_answer) + '</div></div>' +
+        '<div class="score-grid">' + scores.map(([name, value]) => '<div class="mini-score"><strong>' + value.toFixed(3) + '</strong><span>' + name + '</span></div>').join("") + '</div>' +
+        '<div class="trace"><h3>Retrieved trace · Top ' + answer.retrieved_contexts.length + '</h3>' + answer.retrieved_contexts.map((chunk, index) => '<div class="chunk"><div class="chunk-head"><span>#' + (index + 1) + " · " + esc(chunk.chunk_id) + " · " + esc(chunk.source_doc) + '</span><span>BM25 ' + chunk.score.toFixed(3) + '</span></div><p>' + esc(chunk.text) + "</p></div>").join("") + "</div>";
+    }
+    document.getElementById("difficultyFilter").addEventListener("change", renderCases);
+    document.getElementById("statusFilter").addEventListener("change", renderCases);
+    loadData();
+  </script>
+</body>
+</html>

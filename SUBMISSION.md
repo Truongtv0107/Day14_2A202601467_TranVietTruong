@@ -10,6 +10,10 @@
 | Real benchmark | 20 actual answers, 80.0% pass rate |
 | Bonus | Framework comparison and retrieval reranking |
 
+## Live demo
+
+**https://truongtv0107.github.io/Day14_2A202601467_TranVietTruong/**
+
 ## Deliverables
 
 - `solution/solution.py`: completed typed evaluation core.
@@ -19,6 +23,8 @@
   log, regression strategy, and continuous-improvement plan.
 - `artifacts/`: auditable generated answers and benchmark output. No API key
   or `.env` is stored.
+- `demo.py` and `DEMO_GUIDE.md`: API-free interactive mentor demo and
+  five-minute presentation script.
 
 ## Reproduce
 
@@ -27,6 +33,7 @@ python validate_golden_dataset.py
 python -m pytest tests/ -v
 python evaluate_answers.py
 PYTHONPATH=. python scripts/analyze_reranking.py
+python demo.py --all
 ```
 
 Regenerating `artifacts/actual_answers.json` requires a local

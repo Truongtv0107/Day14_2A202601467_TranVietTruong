@@ -24,3 +24,5 @@ jobs:
         run: python -m pytest tests/ -v
       - name: Verify bonus reranking analysis
         run: PYTHONPATH=. python scripts/analyze_reranking.py
+      - name: Smoke-test mentor demo
+        run: python demo.py --all --no-color
